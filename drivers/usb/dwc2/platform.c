@@ -511,12 +511,6 @@ static int dwc2_driver_probe(struct platform_device *dev)
 	if (retval)
 		return retval;
 
-	/*
-	 * Reset before dwc2_get_hwparams() then it could get power-on real
-	 * reset value form registers.
-	 */
-	dwc2_core_reset_and_force_mode(hsotg);
-
 	/* Detect config values from hardware */
 	retval = dwc2_get_hwparams(hsotg);
 	if (retval)
@@ -524,6 +518,8 @@ static int dwc2_driver_probe(struct platform_device *dev)
 
 	/* Validate parameter values */
 	dwc2_set_parameters(hsotg, params);
+
+	dwc2_core_reset_and_force_mode(hsotg);
 
 	if (hsotg->dr_mode != USB_DR_MODE_HOST) {
 		retval = dwc2_gadget_init(hsotg, irq);
