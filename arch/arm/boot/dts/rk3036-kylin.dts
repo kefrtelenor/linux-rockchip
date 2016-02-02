@@ -112,6 +112,24 @@
 	status = "okay";
 };
 
+&emac {
+	/*
+	 * Fix the emac parent clock is DPLL instead of APLL.
+	 * since that will cause some unstable things if the cpufreq
+	 * is working. (e.g: the accurate 50MHz what mac_ref need)
+	 */
+	assigned-clocks = <&cru SCLK_MACPLL>;
+	assigned-clock-parents = <&cru PLL_DPLL>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&emac_xfer>, <&emac_mdio>, <&rmii_rst>;
+	phy = <&phy0>;
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+};
+
 &emmc {
 	status = "okay";
 };
@@ -384,6 +402,16 @@
 };
 
 &pinctrl {
+	pcfg_output_high: pcfg-output-high {
+		output-high;
+	};
+
+	emac {
+		rmii_rst: rmii-rst {
+			rockchip,pins = <2 22 RK_FUNC_GPIO &pcfg_output_high>;
+		};
+	};
+
 	leds {
 		led_ctl: led-ctl {
 			rockchip,pins = <2 30 RK_FUNC_GPIO &pcfg_pull_none>;
