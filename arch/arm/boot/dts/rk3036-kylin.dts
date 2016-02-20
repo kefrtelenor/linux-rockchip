@@ -123,6 +123,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&emac_xfer>, <&emac_mdio>, <&rmii_rst>;
 	phy = <&phy0>;
+	phy-supply = <&vcc_rmii>;
 	status = "okay";
 
 	phy0: ethernet-phy@0 {
@@ -201,7 +202,7 @@
 				};
 			};
 
-			vcc_io: DCDC_REG4 {
+			vcc_io: vcc_rmii: DCDC_REG4 {
 				regulator-always-on;
 				regulator-boot-on;
 				regulator-min-microvolt = <3300000>;
