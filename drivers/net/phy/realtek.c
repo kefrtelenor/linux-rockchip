@@ -16,6 +16,11 @@
 #include <linux/phy.h>
 #include <linux/module.h>
 
+#define RTL8201F_INSR		0x1e
+#define RTL8201F_PAGE_SELECT	0x1f
+#define RTL8201F_INER		0x13
+#define RTL8201F_INER_INIT	0x3800
+
 #define RTL821x_PHYSR		0x11
 #define RTL821x_PHYSR_DUPLEX	0x2000
 #define RTL821x_PHYSR_SPEED	0xc000
@@ -32,6 +37,15 @@
 MODULE_DESCRIPTION("Realtek PHY driver");
 MODULE_AUTHOR("Johnson Leung");
 MODULE_LICENSE("GPL");
+
+static int rtl8201f_ack_interrupt(struct phy_device *phydev)
+{
+	int err;
+
+	err = phy_read(phydev, RTL8201F_INSR);
+
+	return (err < 0) ? err : 0;
+}
 
 static int rtl821x_ack_interrupt(struct phy_device *phydev)
 {
@@ -52,6 +66,24 @@ static int rtl8211f_ack_interrupt(struct phy_device *phydev)
 	phy_write(phydev, RTL8211F_PAGE_SELECT, 0x0);
 
 	return (err < 0) ? err : 0;
+}
+
+static int rtl8201f_config_intr(struct phy_device *phydev)
+{
+	int err;
+
+	err = phy_write(phydev, RTL8201F_PAGE_SELECT, 7);
+	if (err < 0)
+		return err;
+
+	if (phydev->interrupts == PHY_INTERRUPT_ENABLED)
+		err = phy_write(phydev, RTL8201F_INER, RTL8201F_INER_INIT);
+	else
+		err = phy_write(phydev, RTL8201F_INER, 0);
+
+	phy_write(phydev, RTL8201F_PAGE_SELECT, 0);
+
+	return err;
 }
 
 static int rtl8211b_config_intr(struct phy_device *phydev)
@@ -125,6 +157,16 @@ static struct phy_driver realtek_drvs[] = {
 		.config_aneg    = &genphy_config_aneg,
 		.read_status    = &genphy_read_status,
 	}, {
+		.phy_id		= 0x001cc816,
+		.name		= "RTL8201F Ethernet",
+		.phy_id_mask	= 0x001fffff,
+		.features	= PHY_BASIC_FEATURES,
+		.flags		= PHY_HAS_INTERRUPT,
+		.config_aneg	= &genphy_config_aneg,
+		.read_status	= &genphy_read_status,
+		.ack_interrupt	= &rtl8201f_ack_interrupt,
+		.config_intr	= &rtl8201f_config_intr,
+	}, {
 		.phy_id		= 0x001cc912,
 		.name		= "RTL8211B Gigabit Ethernet",
 		.phy_id_mask	= 0x001fffff,
@@ -177,6 +219,7 @@ static struct phy_driver realtek_drvs[] = {
 module_phy_driver(realtek_drvs);
 
 static struct mdio_device_id __maybe_unused realtek_tbl[] = {
+	{ 0x001cc816, 0x001fffff },
 	{ 0x001cc912, 0x001fffff },
 	{ 0x001cc914, 0x001fffff },
 	{ 0x001cc915, 0x001fffff },
