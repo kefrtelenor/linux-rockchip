@@ -124,6 +124,10 @@
 	pinctrl-0 = <&emac_xfer>, <&emac_mdio>, <&rmii_rst>;
 	phy = <&phy0>;
 	phy-supply = <&vcc_rmii>;
+	snps,reset-active-low;
+	snps,reset-delays-us = <0 10000 1000000>;
+	snps,reset-gpio = <&gpio2 22 GPIO_ACTIVE_LOW>;
+
 	status = "okay";
 
 	phy0: ethernet-phy@0 {
