@@ -99,6 +99,37 @@ static int arc_mdio_write(struct mii_bus *bus, int phy_addr,
 }
 
 /**
+ * arc_mdio_reset
+ * @bus: points to the mii_bus structure
+ * Description: reset the MII bus
+ */
+int arc_mdio_reset(struct mii_bus *bus)
+{
+	struct arc_emac_priv *priv = bus->priv;
+	struct arc_emac_mdio_bus_data *data = &priv->bus_data;
+
+printk("%s\n", __func__);
+	if (data->reset_gpio < 0)
+		return 0;
+
+printk("%s setting 1\n", __func__);
+	gpio_direction_output(data->reset_gpio,
+				      data->active_low ? 1 : 0);
+	if (data->delays[0])
+		msleep(DIV_ROUND_UP(data->delays[0], 1000));
+
+	gpio_set_value(data->reset_gpio, data->active_low ? 0 : 1);
+	if (data->delays[1])
+		msleep(DIV_ROUND_UP(data->delays[1], 1000));
+
+	gpio_set_value(data->reset_gpio, data->active_low ? 1 : 0);
+	if (data->delays[2])
+		msleep(DIV_ROUND_UP(data->delays[2], 1000));
+
+	return 0;
+}
+
+/**
  * arc_mdio_probe - MDIO probe function.
  * @priv:	Pointer to ARC EMAC private data structure.
  *
@@ -109,6 +140,8 @@ static int arc_mdio_write(struct mii_bus *bus, int phy_addr,
  */
 int arc_mdio_probe(struct arc_emac_priv *priv)
 {
+	struct arc_emac_mdio_bus_data *data = &priv->bus_data;
+	struct device_node *np = priv->dev->of_node;
 	struct mii_bus *bus;
 	int error;
 
@@ -122,12 +155,26 @@ int arc_mdio_probe(struct arc_emac_priv *priv)
 	bus->name = "Synopsys MII Bus",
 	bus->read = &arc_mdio_read;
 	bus->write = &arc_mdio_write;
+	bus->reset = &arc_mdio_reset;
+
+	/* optional reset-related properties */
+	data->reset_gpio = of_get_named_gpio(np, "snps,reset-gpio", 0);
+	data->active_low = of_property_read_bool(np, "snps,reset-active-low");
+	of_property_read_u32_array(np, "snps,reset-delays-us", data->delays, 3);
+
+	if (data->reset_gpio >= 0) {
+		error = gpio_request(data->reset_gpio, "mdio-reset");
+		if (error < 0)
+			return error;
+	}
 
 	snprintf(bus->id, MII_BUS_ID_SIZE, "%s", bus->name);
 
 	error = of_mdiobus_register(bus, priv->dev->of_node);
 	if (error) {
 		dev_err(priv->dev, "cannot register MDIO bus %s\n", bus->name);
+		if (data->reset_gpio >= 0)
+			gpio_free(data->reset_gpio);
 		mdiobus_free(bus);
 		return error;
 	}
@@ -143,7 +190,11 @@ int arc_mdio_probe(struct arc_emac_priv *priv)
  */
 int arc_mdio_remove(struct arc_emac_priv *priv)
 {
+	struct arc_emac_mdio_bus_data *data = &priv->bus_data;
+
 	mdiobus_unregister(priv->bus);
+	if (data->reset_gpio >= 0)
+		gpio_free(data->reset_gpio);
 	mdiobus_free(priv->bus);
 	priv->bus = NULL;
 
