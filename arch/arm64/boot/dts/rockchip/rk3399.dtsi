@@ -2145,3 +2145,4 @@
 
 	};
 };
+#include "rk3399-opp.dtsi"
