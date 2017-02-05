@@ -132,6 +132,8 @@ static const struct vop_reg_data rk3036_vop_init_reg_table[] = {
 };
 
 static const struct vop_data rk3036_vop = {
+	.max_input = { 1920, 1080},
+	.max_output = { 1920, 1080},
 	.init_table = rk3036_vop_init_reg_table,
 	.table_size = ARRAY_SIZE(rk3036_vop_init_reg_table),
 	.ctrl = &rk3036_ctrl_data,
@@ -273,6 +275,13 @@ static const struct vop_intr rk3288_vop_intr = {
 };
 
 static const struct vop_data rk3288_vop = {
+	.max_input = { 4096, 8192},
+	/*
+	 * TODO: rk3288 have two vop, big one support 3840x2160,
+	 * little one only support 2560x1600.
+	 * Now force use 3840x2160.
+	 */
+	.max_output = { 3840, 2160},
 	.init_table = rk3288_init_reg_table,
 	.table_size = ARRAY_SIZE(rk3288_init_reg_table),
 	.intr = &rk3288_vop_intr,
@@ -341,6 +350,8 @@ static const struct vop_reg_data rk3399_init_reg_table[] = {
 };
 
 static const struct vop_data rk3399_vop_big = {
+	.max_input = { 4096, 8192},
+	.max_output = { 4096, 2160},
 	.init_table = rk3399_init_reg_table,
 	.table_size = ARRAY_SIZE(rk3399_init_reg_table),
 	.intr = &rk3399_vop_intr,
@@ -360,6 +371,8 @@ static const struct vop_win_data rk3399_vop_lit_win_data[] = {
 };
 
 static const struct vop_data rk3399_vop_lit = {
+	.max_input = { 4096, 8192},
+	.max_output = { 2560, 1600},
 	.init_table = rk3399_init_reg_table,
 	.table_size = ARRAY_SIZE(rk3399_init_reg_table),
 	.intr = &rk3399_vop_intr,

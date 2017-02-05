@@ -135,6 +135,11 @@ struct vop_win_data {
 	enum drm_plane_type type;
 };
 
+struct vop_rect {
+	int width;
+	int height;
+};
+
 struct vop_data {
 	const struct vop_reg_data *init_table;
 	unsigned int table_size;
@@ -142,6 +147,8 @@ struct vop_data {
 	const struct vop_intr *intr;
 	const struct vop_win_data *win;
 	unsigned int win_size;
+	struct vop_rect max_input;
+	struct vop_rect max_output;
 };
 
 /* interrupt define */

@@ -857,9 +857,24 @@ static void vop_crtc_disable_vblank(struct drm_crtc *crtc)
 	spin_unlock_irqrestore(&vop->irq_lock, flags);
 }
 
+static enum drm_mode_status
+vop_crtc_mode_valid(struct drm_crtc *crtc, const struct drm_display_mode *mode)
+{
+	struct vop *vop = to_vop(crtc);
+	const struct vop_data *vop_data = vop->data;
+
+	if (mode->hdisplay > vop_data->max_output.width)
+		return MODE_BAD_HVALUE;
+	if (mode->vdisplay > vop_data->max_output.height)
+		return MODE_BAD_VVALUE;
+
+	return MODE_OK;
+}
+
 static const struct rockchip_crtc_funcs private_crtc_funcs = {
 	.enable_vblank = vop_crtc_enable_vblank,
 	.disable_vblank = vop_crtc_disable_vblank,
+	.mode_valid = vop_crtc_mode_valid,
 };
 
 static bool vop_crtc_mode_fixup(struct drm_crtc *crtc,
