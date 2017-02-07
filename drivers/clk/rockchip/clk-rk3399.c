@@ -1132,7 +1132,7 @@ static struct rockchip_clk_branch rk3399_clk_branches[] __initdata = {
 			RK3399_CLKGATE_CON(11), 8, GFLAGS),
 
 	COMPOSITE(PCLK_EDP, "pclk_edp", mux_pll_src_cpll_gpll_p, 0,
-			RK3399_CLKSEL_CON(44), 15, 1, MFLAGS, 8, 5, DFLAGS,
+			RK3399_CLKSEL_CON(44), 15, 1, MFLAGS, 8, 6, DFLAGS,
 			RK3399_CLKGATE_CON(11), 11, GFLAGS),
 	GATE(PCLK_EDP_NOC, "pclk_edp_noc", "pclk_edp", CLK_IGNORE_UNUSED,
 			RK3399_CLKGATE_CON(32), 12, GFLAGS),
@@ -1383,8 +1383,8 @@ static struct rockchip_clk_branch rk3399_clk_branches[] __initdata = {
 	/* clk_test */
 	/* clk_test_pre is controlled by CRU_MISC_CON[3] */
 	COMPOSITE_NOMUX(0, "clk_test", "clk_test_pre", CLK_IGNORE_UNUSED,
-			RK3368_CLKSEL_CON(58), 0, 5, DFLAGS,
-			RK3368_CLKGATE_CON(13), 11, GFLAGS),
+			RK3399_CLKSEL_CON(58), 0, 5, DFLAGS,
+			RK3399_CLKGATE_CON(13), 11, GFLAGS),
 
 	/* ddrc */
 	GATE(0, "clk_ddrc_lpll_src", "lpll", 0, RK3399_CLKGATE_CON(3),

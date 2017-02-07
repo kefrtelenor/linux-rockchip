@@ -43,7 +43,7 @@
 #include <linux/slab.h>
 #include <linux/compat.h>
 
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <asm/unistd.h>
 #include <asm/div64.h>
 #include <asm/timex.h>
@@ -1615,7 +1615,8 @@ void update_process_times(int user_tick)
 		irq_work_tick();
 #endif
 	scheduler_tick();
-	run_posix_cpu_timers(p);
+	if (IS_ENABLED(CONFIG_POSIX_TIMERS))
+		run_posix_cpu_timers(p);
 }
 
 /**
@@ -1675,19 +1676,6 @@ void run_local_timers(void)
 	}
 	raise_softirq(TIMER_SOFTIRQ);
 }
-
-#ifdef __ARCH_WANT_SYS_ALARM
-
-/*
- * For backwards compatibility?  This can be done in libc so Alpha
- * and all newer ports shouldn't need it.
- */
-SYSCALL_DEFINE1(alarm, unsigned int, seconds)
-{
-	return alarm_setitimer(seconds);
-}
-
-#endif
 
 static void process_timeout(unsigned long __data)
 {
@@ -1926,14 +1914,13 @@ EXPORT_SYMBOL(msleep_interruptible);
  */
 void __sched usleep_range(unsigned long min, unsigned long max)
 {
-	ktime_t expires = ktime_add_us(ktime_get(), min);
+	ktime_t exp = ktime_add_us(ktime_get(), min);
 	u64 delta = (u64)(max - min) * NSEC_PER_USEC;
 
 	for (;;) {
 		__set_current_state(TASK_UNINTERRUPTIBLE);
 		/* Do not return before the requested sleep time has elapsed */
-		if (!schedule_hrtimeout_range(&expires, delta,
-					      HRTIMER_MODE_ABS))
+		if (!schedule_hrtimeout_range(&exp, delta, HRTIMER_MODE_ABS))
 			break;
 	}
 }
