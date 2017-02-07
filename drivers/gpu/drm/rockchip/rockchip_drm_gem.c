@@ -301,6 +301,12 @@ int rockchip_gem_mmap(struct file *filp, struct vm_area_struct *vma)
 	return rockchip_drm_gem_object_mmap(obj, vma);
 }
 
+static void rockchip_gem_release_object(struct rockchip_gem_object *rk_obj)
+{
+	drm_gem_object_release(&rk_obj->base);
+	kfree(rk_obj);
+}
+
 struct rockchip_gem_object *
 	rockchip_gem_create_object(struct drm_device *drm, unsigned int size,
 				   bool alloc_kmap)
@@ -326,7 +332,7 @@ struct rockchip_gem_object *
 	return rk_obj;
 
 err_free_rk_obj:
-	kfree(rk_obj);
+	rockchip_gem_release_object(rk_obj);
 	return ERR_PTR(ret);
 }
 
@@ -338,13 +344,11 @@ void rockchip_gem_free_object(struct drm_gem_object *obj)
 {
 	struct rockchip_gem_object *rk_obj;
 
-	drm_gem_free_mmap_offset(obj);
-
 	rk_obj = to_rockchip_obj(obj);
 
 	rockchip_gem_free_buf(rk_obj);
 
-	kfree(rk_obj);
+	rockchip_gem_release_object(rk_obj);
 }
 
 /*
