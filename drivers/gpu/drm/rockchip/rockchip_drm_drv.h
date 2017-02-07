@@ -30,7 +30,6 @@
 
 struct drm_device;
 struct drm_connector;
-struct iommu_domain;
 
 /*
  * Rockchip drm private crtc funcs.
@@ -64,8 +63,6 @@ struct rockchip_drm_private {
 
 	struct list_head psr_list;
 	spinlock_t psr_list_lock;
-	struct iommu_domain *domain;
-	struct drm_mm mm;
 };
 
 int rockchip_register_crtc_funcs(struct drm_crtc *crtc,
