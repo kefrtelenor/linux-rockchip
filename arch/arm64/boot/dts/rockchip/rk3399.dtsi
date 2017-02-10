@@ -102,13 +102,27 @@
 			};
 		};
 
+		idle-states {
+			entry-method = "psci";
+			cpu_sleep: cpu-sleep {
+				compatible = "arm,idle-state";
+				local-timer-stop;
+				arm,psci-suspend-param = <0x0010000>;
+				entry-latency-us = <120>;
+				exit-latency-us = <250>;
+				min-residency-us = <900>;
+			};
+		};
+
 		cpu_l0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a53", "arm,armv8";
 			reg = <0x0 0x0>;
 			enable-method = "psci";
 			#cooling-cells = <2>; /* min followed by max */
+			dynamic-power-coefficient = <100>;
 			clocks = <&cru ARMCLKL>;
+			cpu-idle-states = <&cpu_sleep>;
 		};
 
 		cpu_l1: cpu@1 {
@@ -117,6 +131,7 @@
 			reg = <0x0 0x1>;
 			enable-method = "psci";
 			clocks = <&cru ARMCLKL>;
+			cpu-idle-states = <&cpu_sleep>;
 		};
 
 		cpu_l2: cpu@2 {
@@ -125,6 +140,7 @@
 			reg = <0x0 0x2>;
 			enable-method = "psci";
 			clocks = <&cru ARMCLKL>;
+			cpu-idle-states = <&cpu_sleep>;
 		};
 
 		cpu_l3: cpu@3 {
@@ -133,6 +149,7 @@
 			reg = <0x0 0x3>;
 			enable-method = "psci";
 			clocks = <&cru ARMCLKL>;
+			cpu-idle-states = <&cpu_sleep>;
 		};
 
 		cpu_b0: cpu@100 {
@@ -141,7 +158,9 @@
 			reg = <0x0 0x100>;
 			enable-method = "psci";
 			#cooling-cells = <2>; /* min followed by max */
+			dynamic-power-coefficient = <436>;
 			clocks = <&cru ARMCLKB>;
+			cpu-idle-states = <&cpu_sleep>;
 		};
 
 		cpu_b1: cpu@101 {
@@ -150,6 +169,7 @@
 			reg = <0x0 0x101>;
 			enable-method = "psci";
 			clocks = <&cru ARMCLKB>;
+			cpu-idle-states = <&cpu_sleep>;
 		};
 	};
 
@@ -371,59 +391,115 @@
 		status = "disabled";
 	};
 
+	// TODO(briannorris): this node is based on WIP/FROMLIST
+	// bindings; revisit
 	usbdrd3_0: usb@fe800000 {
 		compatible = "rockchip,rk3399-dwc3";
 		clocks = <&cru SCLK_USB3OTG0_REF>, <&cru SCLK_USB3OTG0_SUSPEND>,
-			 <&cru ACLK_USB3OTG0>, <&cru ACLK_USB3_GRF>;
-		clock-names = "ref_clk", "suspend_clk",
-			      "bus_clk", "grf_clk";
+			 <&cru ACLK_USB3OTG0>, <&cru ACLK_USB3_RKSOC_AXI_PERF>,
+			 <&cru ACLK_USB3>, <&cru ACLK_USB3_GRF>;
+		clock-names = "clk_usb3otg0_ref", "clk_usb3otg0_suspend",
+			      "aclk_usb3otg0", "aclk_usb3_rksoc_axi_perf",
+			      "aclk_usb3", "aclk_usb3_grf";
+		resets = <&cru SRST_A_USB3_OTG0>;
+		reset-names = "usb3-otg";
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
 		status = "disabled";
-		usbdrd_dwc3_0: dwc3@fe800000 {
+		usbdrd_dwc3_0: dwc3 {
 			compatible = "snps,dwc3";
 			reg = <0x0 0xfe800000 0x0 0x100000>;
 			interrupts = <GIC_SPI 105 IRQ_TYPE_LEVEL_HIGH 0>;
 			dr_mode = "otg";
-			phys = <&tcphy0_usb3>;
-			phy-names = "usb3-phy";
-			phy_type = "utmi_wide";
+			phys = <&u2phy0_otg>, <&tcphy0_usb3>;
+			phy-names = "usb2-phy", "usb3-phy";
 			snps,dis_enblslpm_quirk;
-			snps,dis-u2-freeclk-exists-quirk;
+			// TODO: replace with upstream property
+			snps,phyif_utmi_16_bits;
+			snps,dis_u2_freeclk_exists_quirk;
 			snps,dis_u2_susphy_quirk;
-			snps,dis-del-phy-power-chg-quirk;
-			snps,xhci-slow-suspend-quirk;
+			snps,dis_del_phy_power_chg_quirk;
+			snps,usb3-slow-suspend-quirk;
+			snps,usb3-warm-reset-on-resume-quirk;
 			power-domains = <&power RK3399_PD_USB3>;
 			status = "disabled";
 		};
 	};
 
+	// TODO(briannorris): this node is based on WIP/FROMLIST
+	// bindings; revisit
 	usbdrd3_1: usb@fe900000 {
 		compatible = "rockchip,rk3399-dwc3";
 		clocks = <&cru SCLK_USB3OTG1_REF>, <&cru SCLK_USB3OTG1_SUSPEND>,
-			 <&cru ACLK_USB3OTG1>, <&cru ACLK_USB3_GRF>;
-		clock-names = "ref_clk", "suspend_clk",
-			      "bus_clk", "grf_clk";
+			 <&cru ACLK_USB3OTG1>, <&cru ACLK_USB3_RKSOC_AXI_PERF>,
+			 <&cru ACLK_USB3>, <&cru ACLK_USB3_GRF>;
+		clock-names = "clk_usb3otg1_ref", "clk_usb3otg1_suspend",
+			      "aclk_usb3otg1", "aclk_usb3_rksoc_axi_perf",
+			      "aclk_usb3", "aclk_usb3_grf";
+		resets = <&cru SRST_A_USB3_OTG1>;
+		reset-names = "usb3-otg";
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
 		status = "disabled";
-		usbdrd_dwc3_1: dwc3@fe900000 {
+		usbdrd_dwc3_1: dwc3 {
 			compatible = "snps,dwc3";
 			reg = <0x0 0xfe900000 0x0 0x100000>;
 			interrupts = <GIC_SPI 110 IRQ_TYPE_LEVEL_HIGH 0>;
-			dr_mode = "host";
-			phys = <&tcphy1_usb3>;
-			phy-names = "usb3-phy";
-			phy_type = "utmi_wide";
+			dr_mode = "otg";
+			phys = <&u2phy1_otg>, <&tcphy1_usb3>;
+			phy-names = "usb2-phy", "usb3-phy";
 			snps,dis_enblslpm_quirk;
-			snps,dis-u2-freeclk-exists-quirk;
+			// TODO: replace with upstream property
+			snps,phyif_utmi_16_bits;
+			snps,dis_u2_freeclk_exists_quirk;
 			snps,dis_u2_susphy_quirk;
-			snps,dis-del-phy-power-chg-quirk;
-			snps,xhci-slow-suspend-quirk;
+			snps,dis_del_phy_power_chg_quirk;
+			snps,usb3-slow-suspend-quirk;
+			snps,usb3-warm-reset-on-resume-quirk;
 			power-domains = <&power RK3399_PD_USB3>;
 			status = "disabled";
+		};
+	};
+
+	cdn_dp: dp@fec00000 {
+		compatible = "rockchip,rk3399-cdn-dp";
+		reg = <0x0 0xfec00000 0x0 0x100000>;
+		interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&cru SCLK_DP_CORE>, <&cru PCLK_DP_CTRL>,
+			 <&cru SCLK_SPDIF_REC_DPTX>, <&cru PCLK_VIO_GRF>;
+		clock-names = "core-clk", "pclk", "spdif", "grf";
+		assigned-clocks = <&cru SCLK_DP_CORE>;
+		assigned-clock-rates = <100000000>;
+		power-domains = <&power RK3399_PD_HDCP>;
+		phys = <&tcphy0_dp>, <&tcphy1_dp>;
+		resets = <&cru SRST_DPTX_SPDIF_REC>, <&cru SRST_P_UPHY0_DPTX>,
+			 <&cru SRST_P_UPHY0_APB>, <&cru SRST_DP_CORE>;
+		reset-names = "spdif", "dptx", "apb", "core";
+		rockchip,grf = <&grf>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#sound-dai-cells = <1>;
+		status = "disabled";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			dp_in: port {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				dp_in_vopb: endpoint@0 {
+					reg = <0>;
+					remote-endpoint = <&vopb_out_dp>;
+				};
+
+				dp_in_vopl: endpoint@1 {
+					reg = <1>;
+					remote-endpoint = <&vopl_out_dp>;
+				};
+			};
 		};
 	};
 
@@ -678,91 +754,72 @@
 	};
 
 	thermal_zones: thermal-zones {
-		cpu_thermal: cpu {
-			polling-delay-passive = <100>;
-			polling-delay = <1000>;
+		soc_thermal: soc-thermal {
+			polling-delay-passive = <100>; /* milliseconds */
+			polling-delay = <1000>; /* milliseconds */
+			sustainable-power = <1000>; /* milliwatts */
 
 			thermal-sensors = <&tsadc 0>;
 
 			trips {
-				cpu_alert0: cpu_alert0 {
-					temperature = <70000>;
-					hysteresis = <2000>;
+				threshold: trip-point@0 {
+					temperature = <70000>; /* millicelsius */
+					hysteresis = <2000>; /* millicelsius */
 					type = "passive";
 				};
-				cpu_alert1: cpu_alert1 {
-					temperature = <75000>;
-					hysteresis = <2000>;
+				target: trip-point@1 {
+					temperature = <85000>; /* millicelsius */
+					hysteresis = <2000>; /* millicelsius */
 					type = "passive";
 				};
-				cpu_crit: cpu_crit {
-					temperature = <95000>;
-					hysteresis = <2000>;
+				soc_crit: soc-crit {
+					temperature = <95000>; /* millicelsius */
+					hysteresis = <2000>; /* millicelsius */
 					type = "critical";
 				};
 			};
 
 			cooling-maps {
 				map0 {
-					trip = <&cpu_alert0>;
+					trip = <&target>;
 					cooling-device =
-						<&cpu_b0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+						<&cpu_l0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+					contribution = <4096>;
 				};
 				map1 {
-					trip = <&cpu_alert1>;
+					trip = <&target>;
 					cooling-device =
-						<&cpu_l0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
 						<&cpu_b0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+					contribution = <1024>;
 				};
 			};
 		};
 
-		gpu_thermal: gpu {
-			polling-delay-passive = <100>;
-			polling-delay = <1000>;
+		gpu_thermal: gpu-thermal {
+			polling-delay-passive = <100>; /* milliseconds */
+			polling-delay = <1000>; /* milliseconds */
 
 			thermal-sensors = <&tsadc 1>;
-
-			trips {
-				gpu_alert0: gpu_alert0 {
-					temperature = <75000>;
-					hysteresis = <2000>;
-					type = "passive";
-				};
-				gpu_crit: gpu_crit {
-					temperature = <95000>;
-					hysteresis = <2000>;
-					type = "critical";
-				};
-			};
-
-			cooling-maps {
-				map0 {
-					trip = <&gpu_alert0>;
-					cooling-device =
-						<&cpu_b0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
-				};
-			};
 		};
 	};
 
 	tsadc: tsadc@ff260000 {
 		compatible = "rockchip,rk3399-tsadc";
 		reg = <0x0 0xff260000 0x0 0x100>;
+		rockchip,grf = <&grf>;
 		interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL_HIGH 0>;
-		assigned-clocks = <&cru SCLK_TSADC>;
-		assigned-clock-rates = <750000>;
 		clocks = <&cru SCLK_TSADC>, <&cru PCLK_TSADC>;
 		clock-names = "tsadc", "apb_pclk";
+		assigned-clocks = <&cru SCLK_TSADC>;
+		assigned-clock-rates = <750000>;
 		resets = <&cru SRST_TSADC>;
 		reset-names = "tsadc-apb";
-		rockchip,grf = <&grf>;
-		rockchip,hw-tshut-temp = <95000>;
 		pinctrl-names = "init", "default", "sleep";
 		pinctrl-0 = <&otp_gpio>;
 		pinctrl-1 = <&otp_out>;
 		pinctrl-2 = <&otp_gpio>;
 		#thermal-sensor-cells = <1>;
+		rockchip,hw-tshut-temp = <95000>;
 		status = "disabled";
 	};
 
@@ -1006,15 +1063,8 @@
 	};
 
 	pmugrf: syscon@ff320000 {
-		compatible = "rockchip,rk3399-pmugrf", "syscon", "simple-mfd";
+		compatible = "rockchip,rk3399-pmugrf", "syscon";
 		reg = <0x0 0xff320000 0x0 0x1000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		pmu_io_domains: io-domains {
-			compatible = "rockchip,rk3399-pmu-io-voltage-domain";
-			status = "disabled";
-		};
 	};
 
 	spi3: spi@ff350000 {
@@ -1141,25 +1191,25 @@
 		clock-names = "pclk_efuse";
 
 		/* Data cells */
-		cpu_id: cpu-id@7 {
+		cpu_id: cpu-id {
 			reg = <0x07 0x10>;
 		};
-		cpub_leakage: cpu-leakage@17 {
-			reg = <0x17 0x1>;
-		};
-		gpu_leakage: gpu-leakage@18 {
-			reg = <0x18 0x1>;
-		};
-		center_leakage: center-leakage@19 {
-			reg = <0x19 0x1>;
-		};
-		cpul_leakage: cpu-leakage@1a {
+		cpul_leakage: cpul-leakage {
 			reg = <0x1a 0x1>;
 		};
-		logic_leakage: logic-leakage@1b {
+		cpub_leakage: cpub-leakage {
+			reg = <0x17 0x1>;
+		};
+		gpu_leakage: gpu-leakage {
+			reg = <0x18 0x1>;
+		};
+		center_leakage: center-leakage {
+			reg = <0x19 0x1>;
+		};
+		logic_leakage: logic-leakage {
 			reg = <0x1b 0x1>;
 		};
-		wafer_info: wafer-info@1c {
+		wafer_info: wafer-info {
 			reg = <0x1c 0x1>;
 		};
 	};
@@ -1201,6 +1251,7 @@
 	grf: syscon@ff770000 {
 		compatible = "rockchip,rk3399-grf", "syscon", "simple-mfd";
 		reg = <0x0 0xff770000 0x0 0x10000>;
+
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -1276,9 +1327,9 @@
 			compatible = "rockchip,rk3399-pcie-phy";
 			clocks = <&cru SCLK_PCIEPHY_REF>;
 			clock-names = "refclk";
-			#phy-cells = <0>;
 			resets = <&cru SRST_PCIEPHY>;
 			reset-names = "phy";
+			#phy-cells = <0>;
 			status = "disabled";
 		};
 	};
@@ -1286,6 +1337,7 @@
 	tcphy0: phy@ff7c0000 {
 		compatible = "rockchip,rk3399-typec-phy";
 		reg = <0x0 0xff7c0000 0x0 0x40000>;
+		rockchip,grf = <&grf>;
 		clocks = <&cru SCLK_UPHY0_TCPDCORE>,
 			 <&cru SCLK_UPHY0_TCPDPHY_REF>;
 		clock-names = "tcpdcore", "tcpdphy-ref";
@@ -1296,9 +1348,10 @@
 			 <&cru SRST_UPHY0_PIPE_L00>,
 			 <&cru SRST_P_UPHY0_TCPHY>;
 		reset-names = "uphy", "uphy-pipe", "uphy-tcphy";
-		rockchip,grf = <&grf>;
 		rockchip,typec-conn-dir = <0xe580 0 16>;
 		rockchip,usb3tousb2-en = <0xe580 3 19>;
+		rockchip,usb3-host-disable = <0x2434 0 16>;
+		rockchip,usb3-host-port = <0x2434 12 28>;
 		rockchip,external-psm = <0xe588 14 30>;
 		rockchip,pipe-status = <0xe5c0 0 0>;
 		status = "disabled";
@@ -1315,6 +1368,7 @@
 	tcphy1: phy@ff800000 {
 		compatible = "rockchip,rk3399-typec-phy";
 		reg = <0x0 0xff800000 0x0 0x40000>;
+		rockchip,grf = <&grf>;
 		clocks = <&cru SCLK_UPHY1_TCPDCORE>,
 			 <&cru SCLK_UPHY1_TCPDPHY_REF>;
 		clock-names = "tcpdcore", "tcpdphy-ref";
@@ -1325,9 +1379,10 @@
 			 <&cru SRST_UPHY1_PIPE_L00>,
 			 <&cru SRST_P_UPHY1_TCPHY>;
 		reset-names = "uphy", "uphy-pipe", "uphy-tcphy";
-		rockchip,grf = <&grf>;
 		rockchip,typec-conn-dir = <0xe58c 0 16>;
 		rockchip,usb3tousb2-en = <0xe58c 3 19>;
+		rockchip,usb3-host-disable = <0x2444 0 16>;
+		rockchip,usb3-host-port = <0x2444 12 28>;
 		rockchip,external-psm = <0xe594 14 30>;
 		rockchip,pipe-status = <0xe5c0 16 16>;
 		status = "disabled";
@@ -1410,11 +1465,12 @@
 	vopl: vop@ff8f0000 {
 		compatible = "rockchip,rk3399-vop-lit";
 		reg = <0x0 0xff8f0000 0x0 0x3efc>;
-		interrupts = <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH 0>;
 		clocks = <&cru ACLK_VOP1>, <&cru DCLK_VOP1>, <&cru HCLK_VOP1>;
 		clock-names = "aclk_vop", "dclk_vop", "hclk_vop";
 		resets = <&cru SRST_A_VOP1>, <&cru SRST_H_VOP1>, <&cru SRST_D_VOP1>;
 		reset-names = "axi", "ahb", "dclk";
+		power-domains = <&power RK3399_PD_VOPL>;
 		iommus = <&vopl_mmu>;
 		status = "disabled";
 
@@ -1426,14 +1482,21 @@
 				reg = <0>;
 				remote-endpoint = <&edp_in_vopl>;
 			};
+
+			vopl_out_dp: endpoint@1 {
+				reg = <1>;
+				remote-endpoint = <&dp_in_vopl>;
+			};
 		};
 	};
 
 	vopl_mmu: iommu@ff8f3f00 {
 		compatible = "rockchip,iommu";
 		reg = <0x0 0xff8f3f00 0x0 0x100>;
-		interrupts = <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH 0>;
 		interrupt-names = "vopl_mmu";
+		clocks = <&cru ACLK_VOP1>, <&cru DCLK_VOP1>, <&cru HCLK_VOP1>;
+		power-domains = <&power RK3399_PD_VOPL>;
 		#iommu-cells = <0>;
 		status = "disabled";
 	};
@@ -1441,11 +1504,12 @@
 	vopb: vop@ff900000 {
 		compatible = "rockchip,rk3399-vop-big";
 		reg = <0x0 0xff900000 0x0 0x3efc>;
-		interrupts = <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH 0>;
 		clocks = <&cru ACLK_VOP0>, <&cru DCLK_VOP0>, <&cru HCLK_VOP0>;
 		clock-names = "aclk_vop", "dclk_vop", "hclk_vop";
 		resets = <&cru SRST_A_VOP0>, <&cru SRST_H_VOP0>, <&cru SRST_D_VOP0>;
 		reset-names = "axi", "ahb", "dclk";
+		power-domains = <&power RK3399_PD_VOPB>;
 		iommus = <&vopb_mmu>;
 		status = "disabled";
 
@@ -1457,14 +1521,21 @@
 				reg = <0>;
 				remote-endpoint = <&edp_in_vopb>;
 			};
+
+			vopb_out_dp: endpoint@1 {
+				reg = <1>;
+				remote-endpoint = <&dp_in_vopb>;
+			};
 		};
 	};
 
 	vopb_mmu: iommu@ff903f00 {
 		compatible = "rockchip,iommu";
 		reg = <0x0 0xff903f00 0x0 0x100>;
-		interrupts = <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH 0>;
 		interrupt-names = "vopb_mmu";
+		clocks = <&cru ACLK_VOP0>, <&cru DCLK_VOP0>, <&cru HCLK_VOP0>;
+		power-domains = <&power RK3399_PD_VOPB>;
 		#iommu-cells = <0>;
 		status = "disabled";
 	};
@@ -1472,7 +1543,9 @@
 	edp: edp@ff970000 {
 		compatible = "rockchip,rk3399-edp";
 		reg = <0x0 0xff970000 0x0 0x8000>;
-		interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL_HIGH 0>;
+		assigned-clocks = <&cru PCLK_EDP>;
+		assigned-clock-rates = <24000000>;
 		clocks = <&cru PCLK_EDP>, <&cru PCLK_EDP_CTRL>, <&cru PCLK_VIO_GRF>;
 		clock-names = "dp", "pclk", "grf";
 		resets = <&cru SRST_P_EDP_CTRL>;

@@ -18,6 +18,7 @@
 #include <linux/mutex.h>
 #include <linux/slab.h>
 
+#define dev_dbg dev_warn
 struct component;
 
 struct component_match_array {
