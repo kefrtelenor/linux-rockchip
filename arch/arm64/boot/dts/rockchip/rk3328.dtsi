@@ -636,6 +636,20 @@
 		status = "disabled";
 	};
 
+	hdmiphy: phy@ff430000 {
+		compatible = "rockchip,rk3328-hdmi-phy";
+		reg = <0x0 0xff430000 0x0 0x10000>;
+		interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL_HIGH>;
+		#phy-cells = <0>;
+		clocks = <&cru PCLK_HDMIPHY>, <&xin24m>;
+		clock-names = "sysclk", "refclk";
+		#clock-cells = <0>;
+		clock-output-names = "hdmi_phy";
+		nvmem-cells = <&efuse_cpu_version>;
+		nvmem-cell-names = "cpu-version";
+		status = "disabled";
+	};
+
 	cru: clock-controller@ff440000 {
 		compatible = "rockchip,rk3328-cru", "rockchip,cru", "syscon";
 		reg = <0x0 0xff440000 0x0 0x1000>;
