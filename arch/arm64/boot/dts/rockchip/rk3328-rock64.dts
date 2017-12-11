@@ -117,6 +117,10 @@
 	cpu-supply = <&vdd_arm>;
 };
 
+&display_subsystem {
+	status = "okay";
+};
+
 &emmc {
 	bus-width = <8>;
 	cap-mmc-highspeed;
@@ -147,6 +151,10 @@
 };
 
 &gpu {
+	status = "okay";
+};
+
+&hdmi {
 	status = "okay";
 };
 
@@ -339,5 +347,13 @@
 };
 
 &usb_host0_ohci {
+	status = "okay";
+};
+
+&vop {
+	status = "okay";
+};
+
+&vop_mmu {
 	status = "okay";
 };
